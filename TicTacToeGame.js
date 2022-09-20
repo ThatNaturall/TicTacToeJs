@@ -39,12 +39,12 @@ function init(player,OPPONENT){
 
     let gameOver = false;
 
-    //give every space a unique id 
-    //so we can know to put the players move on the gameData array
 
-    let id =0;
+   
     function drawBoard(){
-
+         //give every space a unique id 
+    //so we can know to put the players move on the gameData array
+        let id =0;
         for(let i = 0; i< ROW; i++){
             board[i]=[];
             for(let j = 0; j < COLUMN; j++){
@@ -102,10 +102,139 @@ function init(player,OPPONENT){
         return;
      }
 
-     //give turn to other player
-     currentPlayer = currentPlayer == player.man ? player.friend : player.man;
+     if(OPPONENT == "computer"){
+
+        //get id pf space using minmax algorithm
+
+        let id = minimax(gameData,player.computer).id;
+
+        //store the players move to ganeData (array)
+
+        gameData[id] = player.computer;
+
+        let space = getIJ(id);
+
+        drawOnBoard(player.computer,space.i,space.j);
+
+           // Check if the play wins
+           if(isWinner(gameData, player.computer)){
+            showGameOver(player.computer);
+            gameOver = true;
+            return;
+        }
+
+        // check if it's a tie game
+        if(isTie(gameData)){
+            showGameOver("tie");
+            gameOver = true;
+            return;
+        }
+         }else{
+        // GIVE TURN TO THE OTHER PLAYER
+        currentPlayer = currentPlayer == player.man ? player.friend : player.man;
+        }
+     
+
     
     });
+
+
+    function minimax(gameData,PLAYER){
+
+        //base - recurssion will keep calling itself until it ets here
+        if(isWinner(gameData,player.computer)) return{evaluation : +10};
+        if(isWinner(gameData,player.man)) return{evaluation : -10};
+        if(isTie(gameData))return {evaluation:0};
+
+        //check for empty spaces
+        let EMPTY_SPACES = getEmptySpaces(gameData);
+
+        //save all moves and their evaluations 
+
+        let moves = [];
+
+        //loop over the empty spaces to evaluate them 
+
+        for(let i = 0; i< EMPTY_SPACES.length;i++){
+
+            let id = EMPTY_SPACES[i];
+            //back up the space
+            let backup = gameData[id];
+
+            //make move
+            gameData[id] = PLAYER;
+
+            //save the moves id and evaluation 
+
+            let move = {};
+            move.id = id;
+
+            //the move evaluation 
+
+            if(PLAYER ==player.computer){
+                move.evaluation = minimax(gameData,player.man).evaluation;
+            }else{
+                move.evaluation = minimax(gameData,player.computer).evaluation;
+            }
+
+            gameData[id] = backup;
+
+            //saves to moves array
+
+            moves.push(move);
+
+        }
+
+        //minimax algorithm 
+
+        let bestMove;
+
+        if(PLAYER == player.computer){
+            let bestEvaluation =-Infinity;
+
+            for(let i = 0; i < moves.length; i++){
+
+                if(moves[i].evaluation > bestEvaluation){
+                    bestEvaluation = moves[i].evaluation;
+                    bestMove = moves[i];
+                }
+            }
+        }else{
+
+            let bestEvaluation = +Infinity;
+
+            for(let i =0; i < moves.length; i++){
+                if(moves[i].evaluation < bestEvaluation){
+                    bestEvaluation = moves[i].evaluation;
+                    bestMove = moves[i];
+                }
+            }
+        }
+
+        return bestMove;
+
+    }
+
+    function getEmptySpaces(gameData){
+
+        let EMPTY = [];
+
+        for(let id =0; id < gameData.length; id++){
+            if(!gameData[id]) EMPTY.push(id);
+        }
+
+        return EMPTY;
+    }
+
+    // get i and j of a space 
+
+    function getIJ(id){
+        for(let i =0; i < board.length;i++){
+            for(let j =0; j< board[i].length;j++){
+                if(board[i][j] == id) return {i : i,j : j}
+            }
+        }
+    }
 
 
     //check for a winner 
